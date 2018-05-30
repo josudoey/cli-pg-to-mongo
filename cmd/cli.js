@@ -55,9 +55,17 @@ module.exports = function (prog) {
     .command('pg-migrate [table-name]')
     .description('migrate pg table to mongo')
     .action(async function (tbName, opts) {
-      const { Pool, Client } = require('pg')
       const conf = require('../config')
       conf.load(prog.conf)
+
+      const url = conf.get('mongoose.url')
+      const mongoose = require('mongoose')
+      mongoose.Promise = Promise
+      await mongoose.connect(url)
+      const db = mongoose.connection.db
+
+      const { Pool, Client } = require('pg')
+
       const connectionString = conf.get('pg.connectionString')
       const client = new Client({
         connectionString: connectionString
@@ -72,6 +80,7 @@ module.exports = function (prog) {
         for (let item = await cursor.next(); item !== null; item = await cursor.next()) {
           console.log(JSON.stringify(item, null, 4))
           console.log(`insert to ${name} `)
+          await db.collection(name).insert(item)
         }
       }
 
@@ -86,6 +95,7 @@ module.exports = function (prog) {
         }
       }
       await client.end()
+      mongoose.connection.close()
     })
 
   function pgQuery (client, sql, params) {
