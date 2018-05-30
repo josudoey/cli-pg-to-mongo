@@ -87,5 +87,9 @@ class Config {
 exports = module.exports = new Config({
   mongoose: {
     url: 'mongodb://localhost:27017/test'
+
+  },
+  pg: {
+    connectionString: 'postgres:///test'
   }
 })
