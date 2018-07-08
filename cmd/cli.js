@@ -55,6 +55,8 @@ module.exports = function (prog) {
     .command('pg-migrate [table-name]')
     .description('migrate pg table to mongo')
     .action(async function (tbName, opts) {
+      const camelcase = require('camelcase')
+      const kebabcase = require('kebab-case')
       const conf = require('../config')
       conf.load(prog.conf)
 
@@ -77,10 +79,15 @@ module.exports = function (prog) {
         console.log(`migrate ${name}`)
         const sql = `select * from ${name}`
         const cursor = pgQuery(client, sql)
+        const col = kebabcase(camelcase(name))
         for (let item = await cursor.next(); item !== null; item = await cursor.next()) {
-          console.log(JSON.stringify(item, null, 4))
-          console.log(`insert to ${name} `)
-          await db.collection(name).insert(item)
+          const doc = {}
+          for (key of Object.keys(item)) {
+            doc[camelcase(key)] = item[key]
+          }
+          console.log(JSON.stringify(doc, null, 4))
+          console.log(`insert to ${col} `)
+          await db.collection(col).insert(doc)
         }
       }
 
